@@ -1,14 +1,21 @@
-import { createStore, applyMiddleware } from './redux';
-import { logger } from './middlewares';
+import { createStore, applyMiddleware } from 'redux';
+import { logger, thunk } from './middlewares';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { combineReducers } from './redux/combineReducers';
 
 const PreloadedState = {
-  name: 'mike',
-  age: 22
+  person: {
+    name: 'mike',
+    age: 22
+  },
+  work: {
+    title: 'developer',
+    years: 4
+  }
 }
 
-const reducer = (state, action) => {
+const reducer1 = (state, action) => {
   switch (action.type) {
     case 'SET_NAME':
       return {
@@ -25,7 +32,27 @@ const reducer = (state, action) => {
   }
 }
 
-const store = createStore(reducer, PreloadedState, applyMiddleware(logger));
+const reducer2 = (state, action) => {
+  switch (action.type) {
+    case 'SET_TITLE':
+      return {
+        ...state,
+        title: action.value
+      }
+    case 'SET_YEARS':
+      return {
+        ...state,
+        years: action.value
+      }
+    default:
+      return state;
+  }
+}
+
+const store = createStore(combineReducers({
+  person: reducer1,
+  work: reducer2
+}), PreloadedState, applyMiddleware(thunk, logger));
 
 const handleNameChange = (e) => {
   const name = e.target.value;
@@ -43,18 +70,33 @@ const handleAgeChange = (e) => {
   })
 }
 
+const handleTitleChange = (e) => {
+  const title = e.target.value;
+  store.dispatch({
+    type: 'SET_TITLE',
+    value: title
+  })
+}
+
+const handleYearsChangeAsync = (e) => {
+  const years = +e.target.value;
+  const action = (dispatch) => {
+    setTimeout(() => {
+      dispatch({
+        type: 'SET_YEARS',
+        value: years
+      });
+    }, 1000)
+  };
+  store.dispatch(action);
+}
+
 const App = () => {
-  const [name, setName] = React.useState(store.getState().name);
-  const [age, setAge] = React.useState(store.getState().age);
+  const name = store.getState().person.name;
+  const age = store.getState().person.age;
 
-  React.useEffect(() => {
-    store.subscribe(() => {
-      const { name, age } = store.getState();
-      setName(name);
-      setAge(age);
-    })
-  }, []);
-
+  const title = store.getState().work.title;
+  const years = store.getState().work.years;
 
   return <div>
     <span>name: {name}</span>
@@ -64,10 +106,24 @@ const App = () => {
     <input type="text" value={name} onChange={handleNameChange}  />
     <br/>
     <input type="number" value={age} onChange={handleAgeChange} />
+    <br/>
+    <span>title: {title}</span>
+    <br />
+    <span>years: {years}</span>
+    <br/>
+    <input type="text" value={title} onChange={handleTitleChange}  />
+    <br/>
+    <input type="number" value={years} onChange={handleYearsChangeAsync} />
   </div>
 }
 
-ReactDOM.render(<App />, document.getElementById('app'))
+ReactDOM.render(<App />, document.getElementById('app'));
+
+store.subscribe(() => {
+  ReactDOM.render(<App />, document.getElementById('app'));
+});
+
+
 
 
 

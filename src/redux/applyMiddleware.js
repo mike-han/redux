@@ -1,15 +1,15 @@
+import { compose } from './compose';
 export const applyMiddleware = (...middlewares) => {
   return createStore => (reducer, preloadedState) => {
     const store = createStore(reducer, preloadedState);
 
-    middlewares = middlewares.slice();
-    middlewares.reverse();
+    const middlewareAPI = {
+      getState: store.getState,
+      dispatch: (action, ...args) => dispatch(action, ...args)
+    }
 
-    let dispatch = store.dispatch;
-
-    middlewares.forEach(middleware => {
-      dispatch = middleware(store)(dispatch);
-    });
+    const chain = middlewares.map(middleware => middleware(middlewareAPI))
+    const dispatch = compose(...chain)(store.dispatch)
 
     return {
       ...store,
