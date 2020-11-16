@@ -42,10 +42,10 @@ const index = merge(common, {
     port: 9000
   },
   resolve: {
+    alias: {
+      redux: './redux'
+    },
     extensions: ['.js', '.jsx']
-  },
-  externals:{
-    redux: 'redux'
   },
   plugins: [new HtmlWebpackPlugin({
     template: 'src/index.html'
